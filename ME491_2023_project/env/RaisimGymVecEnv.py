@@ -24,6 +24,11 @@ class RaisimGymVecEnv:
 
         self._observation = np.zeros([self.num_envs, self.num_obs], dtype=np.float32)
         self.actions = np.zeros([self.num_envs, self.num_acts], dtype=np.float32)
+
+        self._observation_blue = np.zeros([self.num_envs, self.num_obs_blue], dtype=np.float32)
+        self.actions_blue = np.zeros([self.num_envs, self.num_acts_blue], dtype=np.float32)
+
+
         self.log_prob = np.zeros(self.num_envs, dtype=np.float32)
         self._reward = np.zeros(self.num_envs, dtype=np.float32)
         self._done = np.zeros(self.num_envs, dtype=bool)
@@ -70,6 +75,10 @@ class RaisimGymVecEnv:
     def observe(self, update_statistics=True):
         self.wrapper.observe(self._observation, update_statistics)
         return self._observation
+
+    def observe_blue(self, update_statistics=False):
+        self.wrapper.observe_blue(self._observation_blue, update_statistics)
+        return self._observation_blue
 
     def get_reward_info(self):
         return self.wrapper.getRewardInfo()

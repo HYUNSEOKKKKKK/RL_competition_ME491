@@ -41,18 +41,23 @@ int main(int argc, char *argv[]) {
 
   EigenRowMajorMat observation(config["num_envs"].template As<int>(), vecEnv.getObDim());
   EigenRowMajorMat action(config["num_envs"].template As<int>(), vecEnv.getActionDim());
+
+  EigenRowMajorMat observation_blue(config["num_envs"].template As<int>(), vecEnv.getObDim_blue());
+  EigenRowMajorMat action_blue(config["num_envs"].template As<int>(), vecEnv.getActionDim_blue());
   EigenVec reward(config["num_envs"].template As<int>(), 1);
   EigenBoolVec dones(config["num_envs"].template As<int>(), 1);
   action.setZero();
 
   Eigen::Ref<EigenRowMajorMat> ob_ref(observation), action_ref(action);
+  Eigen::Ref<EigenRowMajorMat> ob_ref_blue(observation_blue), action_ref_blue(action_blue);
+
   Eigen::Ref<EigenVec> reward_ref(reward);
   Eigen::Ref<EigenBoolVec> dones_ref(dones);
 
   for (int i = 0; i < 10; i++) {
     vecEnv.reset();
     vecEnv.observe(ob_ref, true);
-    vecEnv.step(action_ref, reward_ref, dones_ref);
+    vecEnv.step(action_ref,action_ref_blue, reward_ref, dones_ref);
   }
 
   return 0;

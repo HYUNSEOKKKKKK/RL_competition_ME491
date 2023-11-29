@@ -123,7 +123,12 @@ for update in range(1000000):
                 frame_start = time.time()
                 obs = env.observe(False)
                 action = loaded_graph.architecture(torch.from_numpy(obs).cpu())
-                reward, dones = env.step(action.cpu().detach().numpy())
+
+                obs_blue = env.observe_blue()
+                action_blue = actor_blue.architecture.architecture(torch.from_numpy(obs_blue).to(device)).cpu().detach().numpy()
+
+
+                reward, dones = env.step(action.cpu().detach().numpy(), action_blue)
                 reward_analyzer.add_reward_info(env.get_reward_info())
                 frame_end = time.time()
                 wait_time = cfg['environment']['control_dt'] - (frame_end-frame_start)
