@@ -121,6 +121,11 @@ class ENVIRONMENT {
 
   int getActionDim() { return controller_.getActionDim(); }
 
+  int getObDim_blue() { return controller_blue.getObDim(); }
+
+  int getActionDim_blue() { return controller_blue.getActionDim(); }
+
+
   double getControlTimeStep() { return control_dt_; }
 
   double getSimulationTimeStep() { return simulation_dt_; }

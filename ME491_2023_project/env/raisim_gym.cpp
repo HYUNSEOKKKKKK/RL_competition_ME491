@@ -35,6 +35,10 @@ PYBIND11_MODULE(RAISIMGYM_TORCH_ENV_NAME, m) {
       .def("setControlTimeStep", &VectorizedEnvironment<ENVIRONMENT>::setControlTimeStep)
       .def("getObDim", &VectorizedEnvironment<ENVIRONMENT>::getObDim)
       .def("getActionDim", &VectorizedEnvironment<ENVIRONMENT>::getActionDim)
+
+      .def("getObDim_blue", &VectorizedEnvironment<ENVIRONMENT>::getObDim_blue)
+      .def("getActionDim_blue", &VectorizedEnvironment<ENVIRONMENT>::getActionDim_blue)
+
       .def("getNumOfEnvs", &VectorizedEnvironment<ENVIRONMENT>::getNumOfEnvs)
       .def("turnOnVisualization", &VectorizedEnvironment<ENVIRONMENT>::turnOnVisualization)
       .def("turnOffVisualization", &VectorizedEnvironment<ENVIRONMENT>::turnOffVisualization)

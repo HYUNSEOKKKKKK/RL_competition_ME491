@@ -44,6 +44,10 @@ env.seed(cfg['seed'])
 # shortcuts
 ob_dim = env.num_obs
 act_dim = env.num_acts
+
+ob_dim_blue = env.num_obs_blue
+act_dim_blue = env.num_acts_blue
+
 num_threads = cfg['environment']['num_threads']
 
 # Training
@@ -59,11 +63,11 @@ actor = ppo_module.Actor(ppo_module.MLP(cfg['architecture']['policy_net'], nn.Le
                                                                            NormalSampler(act_dim),
                                                                            cfg['seed']),
                          device)
-actor_blue = ppo_module.Actor(ppo_module.MLP(cfg['architecture']['policy_net'], nn.LeakyReLU, ob_dim, act_dim),
-                         ppo_module.MultivariateGaussianDiagonalCovariance(act_dim,
+actor_blue = ppo_module.Actor(ppo_module.MLP(cfg['architecture']['policy_net'], nn.LeakyReLU, ob_dim_blue, act_dim_blue),
+                         ppo_module.MultivariateGaussianDiagonalCovariance(act_dim_blue,
                                                                            env.num_envs,
                                                                            5.0,
-                                                                           NormalSampler(act_dim),
+                                                                           NormalSampler(act_dim_blue),
                                                                            cfg['seed']),
                          device)
 

@@ -18,6 +18,10 @@ class RaisimGymVecEnv:
         self.wrapper = impl
         self.num_obs = self.wrapper.getObDim()
         self.num_acts = self.wrapper.getActionDim()
+
+        self.num_obs_blue = self.wrapper.getObDim_blue()
+        self.num_acts_blue = self.wrapper.getActionDim_blue()
+
         self._observation = np.zeros([self.num_envs, self.num_obs], dtype=np.float32)
         self.actions = np.zeros([self.num_envs, self.num_acts], dtype=np.float32)
         self.log_prob = np.zeros(self.num_envs, dtype=np.float32)

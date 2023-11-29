@@ -57,6 +57,11 @@ class VectorizedEnvironment {
 
     obDim_ = environments_[0]->getObDim();
     actionDim_ = environments_[0]->getActionDim();
+
+    obDim_blue = environments_[0]->getObDim_blue();
+    actionDim_blue = environments_[0]->getActionDim_blue();
+
+
     RSFATAL_IF(obDim_ == 0 || actionDim_ == 0, "Observation/Action dimension must be defined in the constructor of each environment!")
 
     /// ob scaling
@@ -86,7 +91,7 @@ class VectorizedEnvironment {
       updateObservationStatisticsAndNormalize(ob, updateStatistics);
   }
 
-    void observe_blue(Eigen::Ref<EigenRowMajorMat> &ob, bool updateStatistics) {
+  void observe_blue(Eigen::Ref<EigenRowMajorMat> &ob, bool updateStatistics) {
 #pragma omp parallel for schedule(auto)
         for (int i = 0; i < num_envs_; i++)
             environments_[i]->observe_blue(ob.row(i));
@@ -146,6 +151,10 @@ class VectorizedEnvironment {
 
   int getObDim() { return obDim_; }
   int getActionDim() { return actionDim_; }
+
+  int getObDim_blue() { return obDim_blue; }
+  int getActionDim_blue() { return actionDim_blue; }
+
   int getNumOfEnvs() { return num_envs_; }
 
   ////// optional methods //////
@@ -200,6 +209,7 @@ class VectorizedEnvironment {
 
   int num_envs_ = 1;
   int obDim_ = 0, actionDim_ = 0;
+  int obDim_blue = 0, actionDim_blue = 0;
   bool recordVideo_=false, render_=false;
   std::string resourceDir_;
   Yaml::Node cfg_;
