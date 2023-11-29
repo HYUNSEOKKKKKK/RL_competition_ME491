@@ -86,13 +86,23 @@ class VectorizedEnvironment {
       updateObservationStatisticsAndNormalize(ob, updateStatistics);
   }
 
+    void observe_blue(Eigen::Ref<EigenRowMajorMat> &ob, bool updateStatistics) {
+#pragma omp parallel for schedule(auto)
+        for (int i = 0; i < num_envs_; i++)
+            environments_[i]->observe_blue(ob.row(i));
+
+//        if (normalizeObservation_)
+//            updateObservationStatisticsAndNormalize(ob, updateStatistics);
+    }
+
 
   void step(Eigen::Ref<EigenRowMajorMat> &action,
+            Eigen::Ref<EigenRowMajorMat> &action_blue,
             Eigen::Ref<EigenVec> &reward,
             Eigen::Ref<EigenBoolVec> &done) {
 #pragma omp parallel for schedule(auto)
     for (int i = 0; i < num_envs_; i++)
-      perAgentStep(i, action, reward, done);
+      perAgentStep(i, action, action_blue, reward, done);
   }
 
   void turnOnVisualization() { if(render_) environments_[0]->turnOnVisualization(); }
@@ -170,9 +180,10 @@ class VectorizedEnvironment {
 
   inline void perAgentStep(int agentId,
                            Eigen::Ref<EigenRowMajorMat> &action,
+                           Eigen::Ref<EigenRowMajorMat> &action_blue,
                            Eigen::Ref<EigenVec> &reward,
                            Eigen::Ref<EigenBoolVec> &done) {
-    reward[agentId] = environments_[agentId]->step(action.row(agentId));
+    reward[agentId] = environments_[agentId]->step(action.row(agentId), action_blue.row(agentId));
     rewardInformation_[agentId] = environments_[agentId]->getRewards().getStdMap();
 
     float terminalReward = 0;

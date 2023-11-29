@@ -13,8 +13,8 @@
 
 namespace raisim {
 
-/// change the class name and file name ex) AnymalController_00000000 -> AnymalController_STUDENT_ID
-class AnymalController_00000000 {
+/// change the class name and file name ex) AnymalController_20233225 -> AnymalController_STUDENT_ID
+class AnymalController_20233225 {
 
  public:
   inline bool create(raisim::World *world) {

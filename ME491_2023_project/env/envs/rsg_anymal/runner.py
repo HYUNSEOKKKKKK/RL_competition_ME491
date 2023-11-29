@@ -59,6 +59,14 @@ actor = ppo_module.Actor(ppo_module.MLP(cfg['architecture']['policy_net'], nn.Le
                                                                            NormalSampler(act_dim),
                                                                            cfg['seed']),
                          device)
+actor_blue = ppo_module.Actor(ppo_module.MLP(cfg['architecture']['policy_net'], nn.LeakyReLU, ob_dim, act_dim),
+                         ppo_module.MultivariateGaussianDiagonalCovariance(act_dim,
+                                                                           env.num_envs,
+                                                                           5.0,
+                                                                           NormalSampler(act_dim),
+                                                                           cfg['seed']),
+                         device)
+
 critic = ppo_module.Critic(ppo_module.MLP(cfg['architecture']['value_net'], nn.LeakyReLU, ob_dim, 1),
                            device)
 
@@ -129,13 +137,19 @@ for update in range(1000000):
     for step in range(n_steps):
         obs = env.observe()
         action = ppo.act(obs)
-        reward, dones = env.step(action)
+
+        obs_blue = env.observe_blue()
+        action_blue = actor_blue.architecture.architecture(torch.from_numpy(obs_blue).to(device)).cpu().detach().numpy()
+
+        reward, dones = env.step(action, action_blue)
+
         ppo.step(value_obs=obs, rews=reward, dones=dones)
         done_sum = done_sum + np.sum(dones)
         reward_sum = reward_sum + np.sum(reward)
 
     # take st step to get value obs
     obs = env.observe()
+    obs_blue = env.observe_blue()
     ppo.update(actor_obs=obs, value_obs=obs, log_this_iteration=update % 10 == 0, update=update)
     average_ll_performance = reward_sum / total_steps
     average_dones = done_sum / total_steps

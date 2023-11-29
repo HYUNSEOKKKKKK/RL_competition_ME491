@@ -29,14 +29,25 @@ class ENVIRONMENT {
   explicit ENVIRONMENT(const std::string &resourceDir, const Yaml::Node &cfg, bool visualizable) :
       visualizable_(visualizable) {
     /// add objects
-    auto* robot = world_.addArticulatedSystem(resourceDir + "/anymal/urdf/anymal.urdf");
+    auto* robot = world_.addArticulatedSystem(resourceDir + "/anymal/urdf/anymal_red.urdf");
     robot->setName(PLAYER_NAME);
     controller_.setName(PLAYER_NAME);
     robot->setControlMode(raisim::ControlMode::PD_PLUS_FEEDFORWARD_TORQUE);
+    controller_.setOpponentName("robot_blue");
 
-    world_.addGround();
+    auto* robot_blue = world_.addArticulatedSystem(resourceDir + "/anymal/urdf/anymal_blue.urdf");
+    robot_blue->setName("robot_blue");
+    controller_blue.setName("robot_blue");
+    robot_blue->setControlMode(raisim::ControlMode::PD_PLUS_FEEDFORWARD_TORQUE);
+    controller_.setOpponentName(PLAYER_NAME);
+
+    controller_.setPlayerNum(0);
+    controller_blue.setPlayerNum(1);
+
+      world_.addGround();
 
     controller_.create(&world_);
+    controller_blue.create(&world_);
     READ_YAML(double, simulation_dt_, cfg["simulation_dt"])
     READ_YAML(double, control_dt_, cfg["control_dt"])
 
@@ -58,16 +69,19 @@ class ENVIRONMENT {
   void reset() {
     auto theta = uniDist_(gen_) * 2 * M_PI;
     controller_.reset(&world_, theta);
+    controller_blue.reset(&world_, theta);
   }
 
-  float step(const Eigen::Ref<EigenVec> &action) {
+  float step(const Eigen::Ref<EigenVec> &action, const Eigen::Ref<EigenVec> &action_blue) {
     controller_.advance(&world_, action);
+    controller_blue.advance(&world_, action_blue);
     for (int i = 0; i < int(control_dt_ / simulation_dt_ + 1e-10); i++) {
       if (server_) server_->lockVisualizationServerMutex();
       world_.integrate();
       if (server_) server_->unlockVisualizationServerMutex();
     }
     controller_.updateObservation(&world_);
+    controller_blue.updateObservation(&world_);
     controller_.recordReward(&rewards_);
     return rewards_.sum();
   }
@@ -75,6 +89,11 @@ class ENVIRONMENT {
   void observe(Eigen::Ref<EigenVec> ob) {
     controller_.updateObservation(&world_);
     ob = controller_.getObservation().cast<float>();
+  }
+
+  void observe_blue(Eigen::Ref<EigenVec> ob) {
+      controller_blue.updateObservation(&world_);
+      ob = controller_blue.getObservation().cast<float>();
   }
 
   bool isTerminalState(float &terminalReward) {
@@ -121,7 +140,7 @@ class ENVIRONMENT {
  private:
   bool visualizable_ = false;
   double terminalRewardCoeff_ = -10.;
-  TRAINING_CONTROLLER controller_;
+  TRAINING_CONTROLLER controller_, controller_blue;
   raisim::World world_;
   raisim::Reward rewards_;
   double simulation_dt_ = 0.001;
