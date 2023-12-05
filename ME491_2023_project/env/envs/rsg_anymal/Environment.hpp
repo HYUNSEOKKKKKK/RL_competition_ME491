@@ -33,18 +33,21 @@ class ENVIRONMENT {
     robot->setName(PLAYER_NAME);
     controller_.setName(PLAYER_NAME);
     robot->setControlMode(raisim::ControlMode::PD_PLUS_FEEDFORWARD_TORQUE);
-    controller_.setOpponentName("robot_blue");
+
 
     auto* robot_blue = world_.addArticulatedSystem(resourceDir + "/anymal/urdf/anymal_blue.urdf");
     robot_blue->setName("robot_blue");
     controller_blue.setName("robot_blue");
     robot_blue->setControlMode(raisim::ControlMode::PD_PLUS_FEEDFORWARD_TORQUE);
-    controller_.setOpponentName(PLAYER_NAME);
+
+    controller_.setOpponentName("robot_blue");
+    controller_blue.setOpponentName(PLAYER_NAME);
 
     controller_.setPlayerNum(0);
     controller_blue.setPlayerNum(1);
 
-      world_.addGround();
+    auto ground = world_.addGround();
+    ground->setName("ground");
 
     controller_.create(&world_);
     controller_blue.create(&world_);
@@ -74,7 +77,7 @@ class ENVIRONMENT {
 
   float step(const Eigen::Ref<EigenVec> &action, const Eigen::Ref<EigenVec> &action_blue) {
     controller_.advance(&world_, action);
-    controller_blue.advance(&world_, action_blue);
+    controller_blue.advance_blue(&world_, action_blue);
     for (int i = 0; i < int(control_dt_ / simulation_dt_ + 1e-10); i++) {
       if (server_) server_->lockVisualizationServerMutex();
       world_.integrate();

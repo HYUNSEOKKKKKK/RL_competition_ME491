@@ -19,7 +19,7 @@ class AnymalController_20233225 {
  public:
   inline bool create(raisim::World *world) {
     anymal_ = reinterpret_cast<raisim::ArticulatedSystem *>(world->getObject(name_));
-
+    anymal_blue = reinterpret_cast<raisim::ArticulatedSystem *>(world->getObject(opponentName_));
     /// get robot data
     gcDim_ = anymal_->getGeneralizedCoordinateDim();
     gvDim_ = anymal_->getDOF();
@@ -34,6 +34,9 @@ class AnymalController_20233225 {
     vTarget_.setZero(gvDim_);
     pTarget12_.setZero(nJoints_);
 
+    gc_blue.setZero(gcDim_);
+    gv_blue.setZero(gvDim_);
+
     /// this is nominal configuration of anymal
     gc_init_ << 0, 0, 0.50, 1.0, 0.0, 0.0, 0.0, 0.03, 0.4, -0.8, -0.03, 0.4, -0.8, 0.03, -0.4, 0.8, -0.03, -0.4, 0.8;
 
@@ -47,7 +50,7 @@ class AnymalController_20233225 {
     anymal_->setGeneralizedForce(Eigen::VectorXd::Zero(gvDim_));
 
     /// MUST BE DONE FOR ALL ENVIRONMENTS
-    obDim_ = 34;
+    obDim_ = 38;
     actionDim_ = nJoints_;
     actionMean_.setZero(actionDim_);
     actionStd_.setZero(actionDim_);
@@ -80,6 +83,14 @@ class AnymalController_20233225 {
     return true;
   }
 
+  inline bool advance_blue(raisim::World *world, const Eigen::Ref<EigenVec> &action) {
+    /// action scaling
+    pTarget12_.tail(12) = gc_init_.tail(12);
+    pTarget_.tail(nJoints_) = pTarget12_.tail(12);
+    anymal_->setPdTarget(pTarget_, vTarget_);
+    return true;
+  }
+
   inline bool reset(raisim::World *world, double theta) {
     if (playerNum_ == 0) {
       gc_init_.head(3) << 1.5 * std::cos(theta), 1.5 * std::sin(theta), 0.5;
@@ -94,6 +105,7 @@ class AnymalController_20233225 {
   }
 
   inline void updateObservation(raisim::World *world) {
+      // my controller
     anymal_->getState(gc_, gv_);
     raisim::Vec<4> quat;
     raisim::Mat<3, 3> rot;
@@ -105,16 +117,31 @@ class AnymalController_20233225 {
     bodyLinearVel_ = rot.e().transpose() * gv_.segment(0, 3);
     bodyAngularVel_ = rot.e().transpose() * gv_.segment(3, 3);
 
+    // blue controller
+    anymal_blue->getState(gc_blue, gv_blue);
+//    raisim::Vec<4> quat_blue;
+//    raisim::Mat<3, 3> rot_blue;
+//    quat_blue[0] = gc_blue[3];
+//    quat_blue[1] = gc_blue[4];
+//    quat_blue[2] = gc_blue[5];
+//    quat_blue[3] = gc_blue[6];
+//    raisim::quatToRotMat(quat_blue, rot_blue);
+
+
     obDouble_ << gc_[2], /// body pose
         rot.e().row(2).transpose(), /// body orientation
         gc_.tail(12), /// joint angles
         bodyLinearVel_, bodyAngularVel_, /// body linear&angular velocity
-        gv_.tail(12); /// joint velocity
+        gv_.tail(12), /// joint velocity
+        gc_blue.head(2),
+        gv_blue.head(2);
   }
 
   inline void recordReward(Reward *rewards) {
-    rewards->record("torque", anymal_->getGeneralizedForce().squaredNorm());
-    rewards->record("forwardVel", std::min(4.0, bodyLinearVel_[0]));
+    rewards->record("Vel", bodyLinearVel_.norm());
+    rewards->record("getclose", (gc_.head(2)-gc_blue.head(2)).norm());
+    rewards->record("win", gc_blue.head(2).squaredNorm());
+    rewards->record("minus", gc_blue.head(2).squaredNorm() - gc_.head(2).squaredNorm());
   }
 
   inline const Eigen::VectorXd &getObservation() {
@@ -135,10 +162,17 @@ class AnymalController_20233225 {
 
   inline bool isTerminalState(raisim::World *world) {
     for (auto &contact: anymal_->getContacts()) {
-      if (footIndices_.find(contact.getlocalBodyIndex()) == footIndices_.end()) {
+      if (contact.getPairObjectIndex() == world->getObject("ground")->getIndexInWorld() &&
+          contact.getlocalBodyIndex() == anymal_->getBodyIdx("base")) {
         return true;
+//        if (contact.getlocalBodyIndex() == anymal_->getBodyIdx("ground")){
+//            return true;
       }
     }
+    if (gc_.head(2).squaredNorm()>9){
+        return true;
+    }
+
     return false;
   }
 
@@ -153,15 +187,21 @@ class AnymalController_20233225 {
 
  private:
   std::string name_, opponentName_;
-  int gcDim_, gvDim_, nJoints_, playerNum_ = 0;
+  // my controller
   raisim::ArticulatedSystem *anymal_;
+  int gcDim_, gvDim_, nJoints_, playerNum_ = 0;
   Eigen::VectorXd gc_init_, gv_init_, gc_, gv_, pTarget_, pTarget12_, vTarget_;
   Eigen::VectorXd actionMean_, actionStd_, obDouble_;
   Eigen::Vector3d bodyLinearVel_, bodyAngularVel_;
   std::set<size_t> footIndices_;
+  // blue controller
+  raisim::ArticulatedSystem  *anymal_blue;
+  Eigen::VectorXd gc_blue, gv_blue;
+
   int obDim_ = 0, actionDim_ = 0;
   double forwardVelRewardCoeff_ = 0.;
   double torqueRewardCoeff_ = 0.;
+  double cageRewardCoeff_ = 0.;
 };
 
 }
