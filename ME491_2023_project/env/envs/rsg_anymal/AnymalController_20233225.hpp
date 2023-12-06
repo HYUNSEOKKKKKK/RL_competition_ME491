@@ -108,7 +108,7 @@ class AnymalController_20233225 {
       // my controller
     anymal_->getState(gc_, gv_);
     raisim::Vec<4> quat;
-    raisim::Mat<3, 3> rot;
+    rot;
     quat[0] = gc_[3];
     quat[1] = gc_[4];
     quat[2] = gc_[5];
@@ -138,10 +138,15 @@ class AnymalController_20233225 {
   }
 
   inline void recordReward(Reward *rewards) {
-    rewards->record("Vel", bodyLinearVel_.norm());
-    rewards->record("getclose", (gc_.head(2)-gc_blue.head(2)).norm());
-    rewards->record("win", gc_blue.head(2).squaredNorm());
-    rewards->record("minus", gc_blue.head(2).squaredNorm() - gc_.head(2).squaredNorm());
+    Eigen::Vector3d direc = rot.e().transpose()*(gc_blue.head(3)-gc_.head(3));
+    Eigen::Vector3d direc_normalize = direc / direc.norm();
+
+
+    rewards->record("directionVel", ((bodyLinearVel_.dot(direc_normalize))));
+    rewards->record("speed", exp(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
+//    rewards->record("getclose", exp(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
+//    rewards->record("win", gc_blue.head(2).norm());
+    rewards->record("push", gv_blue.head(2).norm());
   }
 
   inline const Eigen::VectorXd &getObservation() {
@@ -160,19 +165,30 @@ class AnymalController_20233225 {
     playerNum_ = playerNum;
   }
 
+  inline bool isTerminalState_blue(raisim::World *world) {
+    for (auto &contact: anymal_blue->getContacts()) {
+        if (contact.getPairObjectIndex() == world->getObject("ground")->getIndexInWorld() &&
+            contact.getlocalBodyIndex() == anymal_blue->getBodyIdx("base")) {
+            return true;
+        }
+    }
+    if (gc_blue.head(2).squaredNorm()>9){
+        return true;
+    }
+    return false;
+  }
+
+
   inline bool isTerminalState(raisim::World *world) {
     for (auto &contact: anymal_->getContacts()) {
       if (contact.getPairObjectIndex() == world->getObject("ground")->getIndexInWorld() &&
           contact.getlocalBodyIndex() == anymal_->getBodyIdx("base")) {
         return true;
-//        if (contact.getlocalBodyIndex() == anymal_->getBodyIdx("ground")){
-//            return true;
       }
     }
     if (gc_.head(2).squaredNorm()>9){
         return true;
     }
-
     return false;
   }
 
@@ -197,11 +213,9 @@ class AnymalController_20233225 {
   // blue controller
   raisim::ArticulatedSystem  *anymal_blue;
   Eigen::VectorXd gc_blue, gv_blue;
-
+  raisim::Mat<3, 3> rot;
   int obDim_ = 0, actionDim_ = 0;
-  double forwardVelRewardCoeff_ = 0.;
-  double torqueRewardCoeff_ = 0.;
-  double cageRewardCoeff_ = 0.;
+
 };
 
 }

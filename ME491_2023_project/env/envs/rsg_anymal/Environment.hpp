@@ -71,6 +71,7 @@ class ENVIRONMENT {
 
   void reset() {
     auto theta = uniDist_(gen_) * 2 * M_PI;
+//    auto theta_blue = uniDist_(gen_) * 2 * M_PI;
     controller_.reset(&world_, theta);
     controller_blue.reset(&world_, theta);
   }
@@ -101,12 +102,26 @@ class ENVIRONMENT {
 
   bool isTerminalState(float &terminalReward) {
     if(controller_.isTerminalState(&world_)) {
-      terminalReward = terminalRewardCoeff_;
+      terminalReward = terminalRewardCoeff_;         //+10
+
+      return true;
+    }
+    if(controller_.isTerminalState_blue(&world_)) {
+      terminalReward = -1 * terminalRewardCoeff_;    //-10
       return true;
     }
     terminalReward = 0.f;
     return false;
   }
+
+//  bool isTerminalState_blue(float &terminalReward) {
+//    if(controller_.isTerminalState_blue(&world_)) {
+//        terminalReward += terminalRewardCoeff_blue;    //-10
+//        return true;
+//    }
+//    terminalReward += 0.f;
+//    return false;
+//  }
 
   void curriculumUpdate() {};
 
@@ -147,7 +162,7 @@ class ENVIRONMENT {
 
  private:
   bool visualizable_ = false;
-  double terminalRewardCoeff_ = -10.;
+  float terminalRewardCoeff_ = -10.;
   TRAINING_CONTROLLER controller_, controller_blue;
   raisim::World world_;
   raisim::Reward rewards_;
