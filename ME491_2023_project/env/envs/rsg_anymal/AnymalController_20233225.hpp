@@ -50,7 +50,7 @@ class AnymalController_20233225 {
     anymal_->setGeneralizedForce(Eigen::VectorXd::Zero(gvDim_));
 
     /// MUST BE DONE FOR ALL ENVIRONMENTS
-    obDim_ = 38;
+    obDim_ = 18 + 19 + 18 + 19;
     actionDim_ = nJoints_;
     actionMean_.setZero(actionDim_);
     actionStd_.setZero(actionDim_);
@@ -88,6 +88,11 @@ class AnymalController_20233225 {
     pTarget12_.tail(12) = gc_init_.tail(12);
     pTarget_.tail(nJoints_) = pTarget12_.tail(12);
     anymal_->setPdTarget(pTarget_, vTarget_);
+//    pTarget12_ = action.cast<double>();
+//    pTarget12_ = pTarget12_.cwiseProduct(actionStd_);
+//    pTarget12_ += actionMean_;
+//    pTarget_.tail(nJoints_) = pTarget12_;
+//    anymal_->setPdTarget(pTarget_, vTarget_);
     return true;
   }
 
@@ -128,25 +133,29 @@ class AnymalController_20233225 {
 //    raisim::quatToRotMat(quat_blue, rot_blue);
 
 
-    obDouble_ << gc_[2], /// body pose
-        rot.e().row(2).transpose(), /// body orientation
-        gc_.tail(12), /// joint angles
-        bodyLinearVel_, bodyAngularVel_, /// body linear&angular velocity
-        gv_.tail(12), /// joint velocity
-        gc_blue.head(2),
-        gv_blue.head(2);
+    obDouble_ <<
+//        gc_[2], /// body pose
+//        rot.e().row(2).transpose(), /// body orientation
+//        gc_.tail(12), /// joint angles
+//        bodyLinearVel_, bodyAngularVel_, /// body linear&angular velocity
+//        gv_.tail(12), /// joint velocity
+        gc_blue,
+        gv_blue,
+        gc_,
+        gv_;
   }
 
   inline void recordReward(Reward *rewards) {
-    Eigen::Vector3d direc = rot.e().transpose()*(gc_blue.head(3)-gc_.head(3));
-    Eigen::Vector3d direc_normalize = direc / direc.norm();
 
+      Eigen::Vector3d direc = rot.e().transpose()*(gc_blue.head(3)-gc_.head(3));
+      Eigen::Vector3d direc_normalize = direc / direc.norm();
 
     rewards->record("directionVel", ((bodyLinearVel_.dot(direc_normalize))));
-    rewards->record("speed", exp(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
+//    rewards->record("not_to_lose", ((rot.e().row(2).dot(direc_normalize))));
+//    rewards->record("speed", bodyLinearVel_.norm()*(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
 //    rewards->record("getclose", exp(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
-//    rewards->record("win", gc_blue.head(2).norm());
-    rewards->record("push", gv_blue.head(2).norm());
+//    rewards->record("defense", gc_blue.head(2).norm());
+//    rewards->record("push", gv_blue.head(2).norm());
   }
 
   inline const Eigen::VectorXd &getObservation() {

@@ -71,9 +71,9 @@ class ENVIRONMENT {
 
   void reset() {
     auto theta = uniDist_(gen_) * 2 * M_PI;
-//    auto theta_blue = uniDist_(gen_) * 2 * M_PI;
+    auto theta_blue = theta + (uniDist_(gen_)-0.5) * 1.0 *  M_PI;
     controller_.reset(&world_, theta);
-    controller_blue.reset(&world_, theta);
+    controller_blue.reset(&world_, theta_blue);
   }
 
   float step(const Eigen::Ref<EigenVec> &action, const Eigen::Ref<EigenVec> &action_blue) {
