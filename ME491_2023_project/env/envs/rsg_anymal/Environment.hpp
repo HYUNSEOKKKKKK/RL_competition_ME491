@@ -71,16 +71,18 @@ class ENVIRONMENT {
 
   void reset() {
     auto theta = uniDist_(gen_) * 2 * M_PI;
-    auto theta_blue = theta + (uniDist_(gen_)-0.5) * 1.0 *  M_PI;
-    controller_.reset(&world_, theta);
-    controller_blue.reset(&world_, theta_blue);
+    auto theta_blue = theta + (uniDist_(gen_)-0.5) * 0.4 *  M_PI;
+    auto radius = 1.5- uniDist_(gen_) * 0.7;
+    controller_.reset(&world_, theta,radius);
+    controller_blue.reset(&world_, theta_blue,radius);
   }
 
   float step(const Eigen::Ref<EigenVec> &action, const Eigen::Ref<EigenVec> &action_blue) {
     controller_.advance(&world_, action);
     controller_blue.advance_blue(&world_, action_blue);
     for (int i = 0; i < int(control_dt_ / simulation_dt_ + 1e-10); i++) {
-      if (server_) server_->lockVisualizationServerMutex();
+//    controller_.anymal_->setExternalForce()
+    if (server_) server_->lockVisualizationServerMutex();
       world_.integrate();
       if (server_) server_->unlockVisualizationServerMutex();
     }

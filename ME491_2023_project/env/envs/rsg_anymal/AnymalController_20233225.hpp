@@ -50,7 +50,7 @@ class AnymalController_20233225 {
     anymal_->setGeneralizedForce(Eigen::VectorXd::Zero(gvDim_));
 
     /// MUST BE DONE FOR ALL ENVIRONMENTS
-    obDim_ = 18 + 19 + 18 + 19;
+    obDim_ = 2 + 18 + 19;
     actionDim_ = nJoints_;
     actionMean_.setZero(actionDim_);
     actionStd_.setZero(actionDim_);
@@ -80,6 +80,9 @@ class AnymalController_20233225 {
     pTarget12_ += actionMean_;
     pTarget_.tail(nJoints_) = pTarget12_;
     anymal_->setPdTarget(pTarget_, vTarget_);
+//    raisim::Vec<3> force;
+//    force = [0,0,-1]
+//    anymal_->setExternalForce()
     return true;
   }
 
@@ -96,13 +99,13 @@ class AnymalController_20233225 {
     return true;
   }
 
-  inline bool reset(raisim::World *world, double theta) {
+  inline bool reset(raisim::World *world, double theta, double radius) {
     if (playerNum_ == 0) {
       gc_init_.head(3) << 1.5 * std::cos(theta), 1.5 * std::sin(theta), 0.5;
       gc_init_.segment(3, 4) << cos((theta - M_PI) / 2), 0, 0, sin((theta - M_PI) / 2);
     }
     else {
-      gc_init_.head(3) << 1.5 * std::cos(theta + M_PI), 1.5 * std::sin(theta + M_PI), 0.5;
+      gc_init_.head(3) << radius  * std::cos(theta + M_PI), radius * std::sin(theta + M_PI), 0.5;
       gc_init_.segment(3, 4) << cos(theta / 2), 0, 0, sin(theta / 2);
     }
     anymal_->setState(gc_init_, gv_init_);
@@ -139,8 +142,8 @@ class AnymalController_20233225 {
 //        gc_.tail(12), /// joint angles
 //        bodyLinearVel_, bodyAngularVel_, /// body linear&angular velocity
 //        gv_.tail(12), /// joint velocity
-        gc_blue,
-        gv_blue,
+        gc_blue.head(2),
+//        gv_blue,
         gc_,
         gv_;
   }
@@ -151,7 +154,7 @@ class AnymalController_20233225 {
       Eigen::Vector3d direc_normalize = direc / direc.norm();
 
     rewards->record("directionVel", ((bodyLinearVel_.dot(direc_normalize))));
-//    rewards->record("not_to_lose", ((rot.e().row(2).dot(direc_normalize))));
+//    rewards->record("lower", (10.0 - gc_[2]));
 //    rewards->record("speed", bodyLinearVel_.norm()*(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
 //    rewards->record("getclose", exp(-pow((gc_.head(2)-gc_blue.head(2)).norm(),2)));
 //    rewards->record("defense", gc_blue.head(2).norm());
@@ -209,11 +212,11 @@ class AnymalController_20233225 {
     return actionDim_;
   }
 
-
+    raisim::ArticulatedSystem *anymal_;
  private:
   std::string name_, opponentName_;
   // my controller
-  raisim::ArticulatedSystem *anymal_;
+
   int gcDim_, gvDim_, nJoints_, playerNum_ = 0;
   Eigen::VectorXd gc_init_, gv_init_, gc_, gv_, pTarget_, pTarget12_, vTarget_;
   Eigen::VectorXd actionMean_, actionStd_, obDouble_;

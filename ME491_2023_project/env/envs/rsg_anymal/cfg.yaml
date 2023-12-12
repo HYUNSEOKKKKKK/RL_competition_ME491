@@ -13,12 +13,12 @@ environment:
   reward:
     directionVel:
       coeff: 1.0
-#    orientation:
+#    lower:
 #      coeff: 0.2
 
 
 evaluation:
-  iteration: 10000 #Write your final submit policy iteration. ex) if you submit full_10000.pt
+  iteration: 1500 #Write your final submit policy iteration. ex) if you submit full_10000.pt
 
 architecture:
   policy_net: [128, 128]
